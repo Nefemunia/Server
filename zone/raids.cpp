@@ -214,22 +214,26 @@ void Raid::DisbandRaid()
 
 void Raid::MoveMember(const char *name, uint32 newGroup)
 {
-	std::string query = StringFormat("UPDATE raid_members SET groupid = %lu WHERE name = '%s'",
-                                    (unsigned long)newGroup, name);
+
+    const auto query = fmt::format(
+        "UPDATE raid_members SET groupid = {} WHERE name = '{}'",
+        newGroup,
+        name
+        );
     auto results = database.QueryDatabase(query);
 
-	LearnMembers();
-	VerifyRaid();
-	SendRaidMoveAll(name);
+    LearnMembers();
+    VerifyRaid();
+    SendRaidMoveAll(name);
 
-	auto pack = new ServerPacket(ServerOP_RaidChangeGroup, sizeof(ServerRaidGeneralAction_Struct));
-	ServerRaidGeneralAction_Struct *rga = (ServerRaidGeneralAction_Struct*)pack->pBuffer;
-	rga->rid = GetID();
-	strn0cpy(rga->playername, name, 64);
-	rga->zoneid = zone->GetZoneID();
-	rga->instance_id = zone->GetInstanceID();
-	worldserver.SendPacket(pack);
-	safe_delete(pack);
+    auto pack = new ServerPacket(ServerOP_RaidChangeGroup, sizeof(ServerRaidGeneralAction_Struct));
+    auto* rga = (ServerRaidGeneralAction_Struct*) pack->pBuffer;
+    strn0cpy(rga->playername, name, sizeof(rga->playername));
+    rga->rid         = GetID();
+    rga->zoneid      = zone->GetZoneID();
+    rga->instance_id = zone->GetInstanceID();
+    worldserver.SendPacket(pack);
+    safe_delete(pack);
 }
 
 void Raid::SetGroupLeader(const char *who, bool glFlag)
